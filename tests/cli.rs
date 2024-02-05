@@ -10,11 +10,11 @@ use rand::{distributions::Alphanumeric, Rng};
 type TestResult = Result<(), Box<dyn Error>>;
 
 const PRG: &str = "headr";
-const EMPTY: &str = "./tests/inputs.empty.txt";
-const ONE: &str = "./tests/inputs.one.txt";
-const TWO: &str = "./tests/inputs.two.txt";
-const THREE: &str = "./tests/inputs.three.txt";
-const TEN: &str = "./tests/inputs.ten.txt";
+const EMPTY: &str = "./tests/inputs/empty.txt";
+const ONE: &str = "./tests/inputs/one.txt";
+const TWO: &str = "./tests/inputs/two.txt";
+const THREE: &str = "./tests/inputs/three.txt";
+const TEN: &str = "./tests/inputs/ten.txt";
 
 fn rand_string() -> String {
     rand::thread_rng()
@@ -82,7 +82,7 @@ fn skips_bad_file() -> TestResult {
     Command::cargo_bin(PRG)?
         .args(&[EMPTY, &bad, ONE])
         .assert()
-        .stderr(predicate::str::contains(expected));
+        .stderr(predicate::str::is_match(expected)?);
 
     Ok(())
 }
