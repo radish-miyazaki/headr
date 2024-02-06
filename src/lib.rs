@@ -70,7 +70,38 @@ pub fn get_args() -> MyResult<Args> {
 }
 
 pub fn run(args: Args) -> MyResult<()> {
-    dbg!(args);
+    let file_count = args.files.len();
+
+    for (i, filename) in args.files.iter().enumerate() {
+        match open(&filename) {
+            Err(e) => eprintln!("{}: {}", filename , e),
+            Ok(mut file) => {
+                if file_count > 1 {
+                    if i > 0 { println!() }
+
+                    println!("==> {} <==", filename);
+                }
+
+                if let Some(bytes_count) = args.bytes {
+                    let mut handle = file.take(bytes_count as u64);
+                    let mut buf = vec![0; bytes_count];
+                    let bytes_read = handle.read(&mut buf)?;
+
+                    print!("{}", String::from_utf8_lossy(&buf[..bytes_read]));
+                    continue;
+                }
+
+                for _ in 0..args.lines {
+                    let mut buf = String::new();
+
+                    if file.read_line(&mut buf)? > 0 {
+                        print!("{}", buf);
+                        buf.clear();
+                    }
+                }
+            },
+        }
+    }
 
     Ok(())
 }
