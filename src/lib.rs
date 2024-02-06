@@ -1,4 +1,7 @@
 use std::error::Error;
+use std::fs::File;
+use std::io;
+use std::io::{BufRead, BufReader, Read};
 use clap::{Parser};
 
 #[derive(Parser, Debug)]
@@ -54,13 +57,51 @@ fn parse_positive_int(s: &str, typ: &str) -> Result<usize, String> {
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
+fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
+    match filename {
+        "-" => Ok(Box::new(BufReader::new(io::stdin()))),
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?)))
+    }
+}
+
 pub fn get_args() -> MyResult<Args> {
     let args = Args::parse();
     Ok(args)
 }
 
 pub fn run(args: Args) -> MyResult<()> {
-    dbg!(args);
+    let file_count = args.files.len();
+
+    for (i, filename) in args.files.iter().enumerate() {
+        match open(&filename) {
+            Err(e) => eprintln!("{}: {}", filename , e),
+            Ok(mut file) => {
+                if file_count > 1 {
+                    if i > 0 { println!() }
+
+                    println!("==> {} <==", filename);
+                }
+
+                if let Some(bytes_count) = args.bytes {
+                    let mut handle = file.take(bytes_count as u64);
+                    let mut buf = vec![0; bytes_count];
+                    let bytes_read = handle.read(&mut buf)?;
+
+                    print!("{}", String::from_utf8_lossy(&buf[..bytes_read]));
+                    continue;
+                }
+
+                for _ in 0..args.lines {
+                    let mut buf = String::new();
+
+                    if file.read_line(&mut buf)? > 0 {
+                        print!("{}", buf);
+                        buf.clear();
+                    }
+                }
+            },
+        }
+    }
 
     Ok(())
 }
