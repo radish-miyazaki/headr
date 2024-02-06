@@ -1,4 +1,7 @@
 use std::error::Error;
+use std::fs::File;
+use std::io;
+use std::io::{BufRead, BufReader, Read};
 use clap::{Parser};
 
 #[derive(Parser, Debug)]
@@ -53,6 +56,13 @@ fn parse_positive_int(s: &str, typ: &str) -> Result<usize, String> {
 }
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
+
+fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
+    match filename {
+        "-" => Ok(Box::new(BufReader::new(io::stdin()))),
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?)))
+    }
+}
 
 pub fn get_args() -> MyResult<Args> {
     let args = Args::parse();
